@@ -1,26 +1,22 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import "bootstrap-icons/font/bootstrap-icons.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-sri-sidebar: #0b4630;
+  --color-sri-active: #206b4e;
+  --color-sri-hover: #15573e;
+  --color-sri-green: #22a95c;
+  --color-sri-darkgreen: #1f7a4c;
+  --color-sri-gold: #b48327;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+.count-up, .home-counter { font-variant-numeric: tabular-nums; }
+.map-box { isolation: isolate; }
+:focus-visible { outline: 2px solid var(--color-sri-green); outline-offset: 2px; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  .anim-kpi, .anim-panel, .anim-quick { opacity: 1 !important; transform: none !important; }
+  *, ::before, ::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
