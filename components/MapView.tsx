@@ -2,26 +2,40 @@
 
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { PLOTS } from '@/lib/data';
 
-export default function MapView() {
-  const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
+export interface PlotData {
+  name: string;
+  color: string;
+  coords: [number, number][];
+  luasHa?: string | number | null;
+}
+
+export default function MapView({ plots = [] }: { plots?: PlotData[] }) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
+    const initialCenter: [number, number] =
+      plots.length > 0 && plots[0].coords.length > 0
+        ? plots[0].coords[0]
+        : [-6.12, 106.15];
+
     const map = L.map(mapContainerRef.current, {
-      center: [-6.12, 106.15],
+      center: initialCenter,
       zoom: 16,
     });
     mapInstanceRef.current = map;
 
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri',
-    }).addTo(map);
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: 'Tiles &copy; Esri',
+      }
+    ).addTo(map);
 
-    PLOTS.forEach((p) => {
+    plots.forEach((p) => {
       const poly = L.polygon(p.coords, {
         color: p.color,
         weight: 2,
@@ -49,7 +63,7 @@ export default function MapView() {
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, []);
+  }, [plots]);
 
   return <div ref={mapContainerRef} className="w-full h-full" />;
 }

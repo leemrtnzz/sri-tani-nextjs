@@ -249,7 +249,8 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 min-h-11 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:border-sri-green focus:ring-2 focus:ring-sri-green/20 cursor-pointer"
                   >
-                    <option value="user">User (Petugas Lapangan / Mitra)</option>
+                    <option value="user">User (Mitra Tani)</option>
+                    <option value="petugas">Petugas (Petugas Lapangan)</option>
                     <option value="admin">Admin (Administrator)</option>
                   </select>
                 </div>

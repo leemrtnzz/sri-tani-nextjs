@@ -21,7 +21,8 @@ export async function POST(request: Request) {
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanUsername = String(username).trim().toLowerCase();
     const cleanPassword = String(password);
-    const chosenRole: 'admin' | 'user' = role === 'admin' ? 'admin' : 'user';
+    const validRoles = ['admin', 'petugas', 'user'];
+    const chosenRole: 'admin' | 'petugas' | 'user' = validRoles.includes(role) ? role : 'user';
 
     if (cleanNama.length < 2) {
       return NextResponse.json(

@@ -31,7 +31,7 @@ export const statusTagihanValues = [
 export const jenisTransaksiValues = ['pemasukan', 'pengeluaran'] as const;
 export const jenisTernakValues = ['sapi_potong', 'kambing', 'unggas'] as const;
 export const kondisiTernakValues = ['sehat', 'perlu_vaksin', 'sakit'] as const;
-export const roleValues = ['admin', 'user'] as const;
+export const roleValues = ['admin', 'petugas', 'user'] as const;
 
 export const fasePlantEnum = (name: string) => mysqlEnum(name, fasePlantValues);
 export const statusPenggarapEnum = (name: string) => mysqlEnum(name, statusPenggarapValues);
