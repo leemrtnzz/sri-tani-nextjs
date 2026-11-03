@@ -1,23 +1,37 @@
 import { Suspense } from 'react';
-import { getDashboardData } from '@/lib/db-data';
-import DashboardHomeClient from '@/components/DashboardHomeClient';
+import { connection } from 'next/server';
+import DashboardHomeClient from '@/components/dashboard/DashboardHomeClient';
+import { getDashboardData } from '@/lib/queries/dashboard';
+import { parsePeriod } from '@/lib/period';
 
-async function DashboardContent() {
-  const data = await getDashboardData();
+type SearchParams = Promise<{
+  bulan?: string | string[];
+  tahun?: string | string[];
+}>;
+
+async function Content({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  await connection();
+  const period = parsePeriod(params.bulan, params.tahun);
+  const data = await getDashboardData(period);
   return <DashboardHomeClient data={data} />;
 }
 
-export default function DashboardHomePage() {
+export default function DashboardHomePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-center text-slate-500 font-medium">
+        <div className="p-8 text-center text-slate-600 font-medium">
           <i className="bi bi-arrow-repeat animate-spin text-xl mr-2 inline-block" />
           Memuat data dashboard...
         </div>
       }
     >
-      <DashboardContent />
+      <Content searchParams={searchParams} />
     </Suspense>
   );
 }

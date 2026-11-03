@@ -24,10 +24,18 @@ export const authConfig = {
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
+        const extended = user as typeof user & {
+          role?: string;
+          username?: string;
+          nama?: string;
+          email?: string | null;
+        };
         token.id = user.id;
-        token.role = (user as any).role;
-        token.username = (user as any).username;
-        token.nama = (user as any).nama || user.name;
+        token.role = extended.role;
+        token.username = extended.username;
+        token.nama = extended.nama || user.name;
+        token.email = extended.email || user.email;
+        token.name = extended.nama || user.name;
       }
       if (trigger === 'update' && session?.user) {
         token = { ...token, ...session.user };
@@ -36,10 +44,17 @@ export const authConfig = {
     },
     async session({ session, token }) {
       if (token && session.user) {
+        const extended = session.user as typeof session.user & {
+          role?: unknown;
+          username?: unknown;
+          nama?: unknown;
+        };
         session.user.id = (token.id as string) || (token.sub as string);
-        (session.user as any).role = token.role;
-        (session.user as any).username = token.username;
-        (session.user as any).nama = token.nama;
+        extended.role = token.role;
+        extended.username = token.username;
+        extended.nama = token.nama;
+        if (token.email) session.user.email = token.email as string;
+        if (token.name) session.user.name = token.name as string;
       }
       return session;
     },

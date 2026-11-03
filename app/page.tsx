@@ -3,9 +3,39 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import anime from 'animejs';
+import { formatHa, formatKg, formatNumber } from '@/lib/format';
+
+type PublicSummary = {
+  totalLahanHa: number;
+  totalPenggarap: number;
+  totalGabahKg: number;
+  totalBerasKg: number;
+  totalTernak: number;
+  totalKandang: number;
+  lotAktif: number;
+  rataHasilTonPerHa: number;
+  marginLaba: number;
+  penjualan: number;
+  laba: number;
+  periode: string;
+};
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [summary, setSummary] = useState<PublicSummary | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/public/summary', { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((result) => {
+        if (result?.data) setSummary(result.data as PublicSummary);
+      })
+      .catch(() => {
+        // Ringkasan opsional, halaman tetap tampil tanpa angka.
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -29,42 +59,9 @@ export default function HomePage() {
       duration: 950,
     }, '-=650');
 
-    // 2. Animasi Counter Statistik (IntersectionObserver)
-    const counters = document.querySelectorAll('.home-counter');
-    let counterPlayed = false;
-
-    const counterObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && !counterPlayed) {
-          counterPlayed = true;
-          counters.forEach((el) => {
-            const targetVal = parseFloat(el.getAttribute('data-val') ?? '');
-            const decimals = parseInt(el.getAttribute('data-dec') || '0', 10);
-            const obj = { count: 0 };
-
-            anime({
-              targets: obj,
-              count: targetVal,
-              duration: 2000,
-              easing: 'easeOutExpo',
-              update: () => {
-                el.innerHTML = obj.count.toLocaleString('id-ID', {
-                  minimumFractionDigits: decimals,
-                  maximumFractionDigits: decimals,
-                });
-              },
-            });
-          });
-        }
-      });
-    }, { threshold: 0.3 });
-
-    const statsSection = document.getElementById('statistik');
-    if (statsSection) counterObserver.observe(statsSection);
-
-    // 3. Animasi Scroll untuk Kartu Sektor & Fitur
-    const observers:any = [];
-    const animateOnScroll = (selector:any, staggerDelay = 120) => {
+    // 2. Animasi Scroll untuk Kartu Sektor & Fitur
+    const observers: IntersectionObserver[] = [];
+    const animateOnScroll = (selector: string, staggerDelay = 120) => {
       const elements = document.querySelectorAll(selector);
       let played = false;
 
@@ -90,8 +87,7 @@ export default function HomePage() {
     animateOnScroll('.feature-card', 95);
 
     return () => {
-      counterObserver.disconnect();
-      observers.forEach((obs:any) => obs.disconnect());
+      observers.forEach((obs) => obs.disconnect());
     };
   }, []);
 
@@ -177,7 +173,7 @@ export default function HomePage() {
               </h1>
 
               <p className="hero-anim opacity-0 text-base sm:text-lg text-white/80 leading-relaxed max-w-2xl">
-                Pantau pemetaan geospasial lahan sawah, jadwal penggilingan gabah, populasi dan kesehatan ternak, hingga analisa arus kas penjualan ke mitra toko secara presisi dan waktu nyata.
+                Pantau pemetaan geospasial lahan sawah, jadwal penggilingan gabah, populasi dan kesehatan ternak, hingga analisa arus kas penjualan ke mitra toko dalam satu dashboard terpadu.
               </p>
 
               <div className="hero-anim opacity-0 pt-2 flex flex-wrap items-center gap-4">
@@ -208,7 +204,7 @@ export default function HomePage() {
                 <div>
                   <div className="text-xs text-white/60">Transparansi Dana</div>
                   <div className="text-sm font-bold text-white mt-0.5 flex items-center gap-1.5">
-                    <i className="bi bi-pie-chart text-emerald-400" /> Cashflow Real-time
+                    <i className="bi bi-pie-chart text-emerald-400" /> Cashflow terpadu
                   </div>
                 </div>
               </div>
@@ -240,8 +236,14 @@ export default function HomePage() {
                       <span>Sektor Pertanian</span>
                       <i className="bi bi-layers-fill text-sri-green" />
                     </div>
-                    <div className="text-xl font-bold text-slate-800">12,5 Ha</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">28.540 Kg Produksi Gabah</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {summary ? formatHa(summary.totalLahanHa) : 'Memuat data'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      {summary
+                        ? `${formatKg(summary.totalGabahKg)} produksi gabah`
+                        : 'Ringkasan produksi'}
+                    </div>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
@@ -249,8 +251,16 @@ export default function HomePage() {
                       <span>Sektor Peternakan</span>
                       <i className="bi bi-box-seam-fill text-amber-500" />
                     </div>
-                    <div className="text-xl font-bold text-slate-800">420 Ekor</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">14 Kandang Terpantau</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {summary
+                        ? `${formatNumber(summary.totalTernak)} Ekor`
+                        : 'Memuat data'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      {summary
+                        ? `${summary.totalKandang} kandang terpantau`
+                        : 'Ringkasan peternakan'}
+                    </div>
                   </div>
                 </div>
 
@@ -266,7 +276,9 @@ export default function HomePage() {
                         <div className="text-slate-400">Kapasitas operasional tersedia</div>
                       </div>
                     </div>
-                    <span className="font-bold text-slate-700">3 Lot Aktif</span>
+                    <span className="font-bold text-slate-700">
+                      {summary ? `${summary.lotAktif} lot aktif` : 'Memuat'}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-lg border border-slate-100 text-xs">
@@ -279,7 +291,20 @@ export default function HomePage() {
                         <div className="text-slate-400">Gabungan hasil panen &amp; ternak</div>
                       </div>
                     </div>
-                    <span className="font-bold text-emerald-600">+18,5%</span>
+                    <span
+                      className={`font-bold ${
+                        summary && summary.laba < 0
+                          ? 'text-red-600'
+                          : 'text-emerald-600'
+                      }`}
+                    >
+                      {summary
+                        ? `${summary.marginLaba > 0 ? '+' : ''}${formatNumber(
+                            summary.marginLaba,
+                            1,
+                          )}%`
+                        : 'Memuat'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -295,33 +320,43 @@ export default function HomePage() {
             <div className="pt-4 sm:pt-0 sm:px-6 first:pl-0 first:pt-0">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Luas Lahan Terpetakan</div>
               <div className="text-3xl font-extrabold text-sri-sidebar mt-1">
-                <span className="home-counter" data-val="12.5" data-dec="1">0</span> Ha
+                {summary ? formatHa(summary.totalLahanHa) : 'Memuat data'}
               </div>
-              <div className="text-xs text-slate-500 mt-1">Dikelola oleh 8 penggarap mitra</div>
+              <div className="text-xs text-slate-500 mt-1">
+                {summary
+                  ? `Dikelola oleh ${summary.totalPenggarap} penggarap mitra`
+                  : 'Ringkasan penggarap mitra'}
+              </div>
             </div>
 
             <div className="pt-4 sm:pt-0 sm:px-6">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Produksi Pangan</div>
               <div className="text-3xl font-extrabold text-sri-sidebar mt-1">
-                <span className="home-counter" data-val="28540" data-dec="0">0</span> Kg
+                {summary ? formatKg(summary.totalGabahKg) : 'Memuat data'}
               </div>
-              <div className="text-xs text-slate-500 mt-1">Akumulasi gabah kering &amp; beras</div>
+              <div className="text-xs text-slate-500 mt-1">
+                Akumulasi gabah kering yang tercatat
+              </div>
             </div>
 
             <div className="pt-4 sm:pt-0 sm:px-6">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Populasi Ternak Mitra</div>
               <div className="text-3xl font-extrabold text-sri-sidebar mt-1">
-                <span className="home-counter" data-val="420" data-dec="0">0</span> Ekor
+                {summary ? `${formatNumber(summary.totalTernak)} Ekor` : 'Memuat data'}
               </div>
-              <div className="text-xs text-slate-500 mt-1">Sapi potong, kambing &amp; unggas</div>
+              <div className="text-xs text-slate-500 mt-1">
+                Sapi potong, kambing &amp; unggas
+              </div>
             </div>
 
             <div className="pt-4 sm:pt-0 sm:px-6">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Distribusi ke Toko</div>
               <div className="text-3xl font-extrabold text-sri-sidebar mt-1">
-                <span className="home-counter" data-val="21200" data-dec="0">0</span> Kg
+                {summary ? formatKg(summary.totalBerasKg) : 'Memuat data'}
               </div>
-              <div className="text-xs text-slate-500 mt-1">Tersalurkan ke jaringan ritel</div>
+              <div className="text-xs text-slate-500 mt-1">
+                Beras tercatat menuju toko mitra
+              </div>
             </div>
           </div>
         </div>
@@ -366,8 +401,12 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Rata-rata Produktivitas</span>
-              <strong className="text-slate-800 font-bold">8,2 Ton / Hektar</strong>
+              <span>Rata-rata produktivitas</span>
+              <strong className="text-slate-800 font-bold">
+                {summary
+                  ? `${formatNumber(summary.rataHasilTonPerHa, 2)} Ton / Hektar`
+                  : 'Memuat data'}
+              </strong>
             </div>
           </div>
 
@@ -399,8 +438,10 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Efisiensi Pakan Sirkular</span>
-              <strong className="text-slate-800 font-bold">Hemat Biaya Operasional 24%</strong>
+              <span>Efisiensi pakan sirkular</span>
+              <strong className="text-slate-800 font-bold">
+                Memakai dedak dan jerami
+              </strong>
             </div>
           </div>
         </div>

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import anime from 'animejs';
-import { NAV } from '@/lib/data';
+import { NAV, FLAT_NAV, type NavItem } from '@/lib/navigation';
 
 const row = 'flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-colors ';
 const on = 'bg-sri-active text-white font-semibold';
@@ -22,34 +22,32 @@ export default function DashboardLayoutClient({
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
-  const [laporanOpen, setLaporanOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement | null>(null);
 
-  const flatNav = (NAV as any[]).flatMap((i: any) => i.children || [i]);
+  const sessionUser = session?.user as
+    | {
+        nama?: string;
+        name?: string | null;
+        username?: string;
+        email?: string | null;
+        role?: string;
+      }
+    | undefined;
 
   const userName =
-    (session?.user as any)?.nama ||
-    session?.user?.name ||
-    (session?.user as any)?.username ||
-    'Pengguna';
+    sessionUser?.nama || sessionUser?.name || sessionUser?.username || 'Pengguna';
 
   const userRole =
-    (session?.user as any)?.role === 'admin'
+    sessionUser?.role === 'admin'
       ? 'Administrator'
-      : (session?.user as any)?.role === 'petugas'
-      ? 'Petugas Lapangan'
-      : 'User Mitra';
+      : sessionUser?.role === 'petugas'
+        ? 'Petugas Lapangan'
+        : 'User Mitra';
 
   const userInitial = userName.charAt(0).toUpperCase();
-
-  useEffect(() => {
-    const isSubActive = (NAV as any[])
-      .find((g: any) => g.children)
-      ?.children?.some((c: any) => pathname === c.href);
-    if (isSubActive) setLaporanOpen(true);
-    setMobileOpen(false);
-    setSearchQuery('');
-  }, [pathname]);
 
   useEffect(() => {
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -65,38 +63,55 @@ export default function DashboardLayoutClient({
   }, []);
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMobileOpen(false);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileOpen(false);
+        setProfileOpen(false);
+      }
+    };
+    const onPointerDown = (event: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onPointerDown);
+    };
   }, []);
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 1024) {
-      setMobileOpen((prev) => !prev);
+      setMobileOpen((current) => !current);
     } else {
-      setDesktopCollapsed((prev) => !prev);
+      setDesktopCollapsed((current) => !current);
     }
   };
 
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setSearchQuery(val);
-    const q = val.trim().toLowerCase();
+  const handleSearchInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchQuery(value);
+    const needle = value.trim().toLowerCase();
     let shown = 0;
-    document.querySelectorAll('[data-row]').forEach((r) => {
-      const hit = r.textContent?.toLowerCase().includes(q);
-      r.classList.toggle('hidden', !hit);
-      if (hit) shown++;
+    document.querySelectorAll('[data-row]').forEach((element) => {
+      const hit = element.textContent?.toLowerCase().includes(needle);
+      element.classList.toggle('hidden', !hit);
+      if (hit) shown += 1;
     });
-    document.getElementById('emptyState')?.classList.toggle('hidden', shown > 0 || !q);
+    document
+      .getElementById('emptyState')
+      ?.classList.toggle('hidden', shown > 0 || !needle);
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
-    const hit = flatNav.find(
-      (i: any) => i.label.toLowerCase() === searchQuery.trim().toLowerCase()
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    const hit = FLAT_NAV.find(
+      (item) => item.label.toLowerCase() === searchQuery.trim().toLowerCase(),
     );
     if (hit) router.push(hit.href);
   };
@@ -110,9 +125,27 @@ export default function DashboardLayoutClient({
     await signOut({ callbackUrl: '/login' });
   };
 
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`));
+
+  const renderItem = (item: NavItem) => {
+    const active = isActive(item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={() => setMobileOpen(false)}
+        aria-current={active ? 'page' : undefined}
+        className={`nav-item ${row}${active ? on : off}`}
+      >
+        <i className={`bi bi-${item.icon} text-base`} />
+        <span>{item.label}</span>
+      </Link>
+    );
+  };
+
   return (
     <div className="flex min-h-screen w-full relative">
-      {/* Overlay Mobile */}
       <div
         onClick={() => setMobileOpen(false)}
         className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${
@@ -120,17 +153,20 @@ export default function DashboardLayoutClient({
         }`}
       />
 
-      {/* Sidebar */}
       <aside
-  onTransitionEnd={(e) => {
-    if (e.propertyName === 'margin-left') window.dispatchEvent(new Event('resize'));
-  }}
-  className={`w-[250px] shrink-0 bg-sri-sidebar text-white flex flex-col fixed lg:sticky lg:top-0 lg:h-screen lg:self-start inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out ${
-    mobileOpen ? 'translate-x-0' : '-translate-x-full'
-  } ${
-    desktopCollapsed ? 'lg:-translate-x-full lg:-ml-[250px]' : 'lg:translate-x-0 lg:ml-0'
-  }`}
->
+        onTransitionEnd={(event) => {
+          if (event.propertyName === 'margin-left') {
+            window.dispatchEvent(new Event('resize'));
+          }
+        }}
+        className={`w-[250px] shrink-0 bg-sri-sidebar text-white flex flex-col fixed lg:sticky lg:top-0 lg:h-screen lg:self-start inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          desktopCollapsed
+            ? 'lg:-translate-x-full lg:-ml-[250px]'
+            : 'lg:translate-x-0 lg:ml-0'
+        }`}
+      >
         <Link
           href="/"
           className="px-5 py-5 flex items-center gap-3 border-b border-white/10"
@@ -140,21 +176,36 @@ export default function DashboardLayoutClient({
             <i className="bi bi-flower1" />
           </div>
           <div>
-            <div className="text-base font-bold tracking-wide leading-tight">SRI TANI</div>
+            <div className="text-base font-bold tracking-wide leading-tight">
+              SRI TANI
+            </div>
             <span className="text-xs text-white/70 block">Pertanian Terpadu</span>
           </div>
         </Link>
 
-        <nav className="p-3 flex-1 flex flex-col space-y-1 overflow-y-auto" aria-label="Menu utama">
-          {(NAV as any[]).map((item) => {
+        <nav
+          className="p-3 flex-1 flex flex-col space-y-1 overflow-y-auto"
+          aria-label="Menu utama"
+        >
+          {NAV.map((item) => {
             if (item.children) {
+              const groupActive = item.children.some((child) => isActive(child.href));
+              const expanded = openGroups[item.label] ?? groupActive;
+
               return (
                 <div key={item.label} className="nav-item">
                   <button
                     type="button"
-                    aria-expanded={laporanOpen}
-                    onClick={() => setLaporanOpen((prev) => !prev)}
-                    className={`w-full justify-between cursor-pointer ${row}${off}`}
+                    aria-expanded={expanded}
+                    onClick={() =>
+                      setOpenGroups((current) => ({
+                        ...current,
+                        [item.label]: !expanded,
+                      }))
+                    }
+                    className={`w-full justify-between cursor-pointer ${row}${
+                      groupActive ? 'text-white' : off
+                    }`}
                   >
                     <span className="flex items-center gap-3">
                       <i className={`bi bi-${item.icon} text-base`} />
@@ -162,30 +213,31 @@ export default function DashboardLayoutClient({
                     </span>
                     <i
                       className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
-                        laporanOpen ? 'rotate-180' : ''
+                        expanded ? 'rotate-180' : ''
                       }`}
                     />
                   </button>
                   <div
                     className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-                      laporanOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                      expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                     }`}
                   >
                     <div className="overflow-hidden pl-9 pr-2 space-y-1 py-0.5">
-                      {item.children.map((c: any) => {
-                        const act = pathname === c.href;
+                      {item.children.map((child) => {
+                        const active = isActive(child.href);
                         return (
                           <Link
-                            key={c.href}
-                            href={c.href}
-                            aria-current={act ? 'page' : undefined}
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setMobileOpen(false)}
+                            aria-current={active ? 'page' : undefined}
                             className={`block py-1.5 px-2 rounded text-xs transition-colors ${
-                              act
+                              active
                                 ? 'text-white bg-white/10 font-semibold'
                                 : 'text-white/75 hover:text-white hover:bg-white/5'
                             }`}
                           >
-                            {c.label}
+                            {child.label}
                           </Link>
                         );
                       })}
@@ -195,34 +247,12 @@ export default function DashboardLayoutClient({
               );
             }
 
-            const act = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={act ? 'page' : undefined}
-                className={`nav-item ${row}${act ? on : off}`}
-              >
-                <i className={`bi bi-${item.icon} text-base`} />
-                <span>{item.label}</span>
-              </Link>
-            );
+            return renderItem(item);
           })}
 
-          <div className="mt-auto sticky bottom-0 bg-sri-sidebar pt-3 pb-3 -mb-3 border-t border-white/10">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className={`w-full text-left cursor-pointer ${row}${off}`}
-            >
-              <i className="bi bi-box-arrow-right text-base text-red-300" />
-              <span>Keluar</span>
-            </button>
-          </div>
         </nav>
       </aside>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
@@ -248,22 +278,79 @@ export default function DashboardLayoutClient({
                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:bg-white focus:border-sri-green focus:ring-2 focus:ring-sri-green/15 transition-colors"
               />
               <datalist id="navList">
-                {flatNav.map((i: any) => (
-                  <option key={i.href} value={i.label} />
+                {FLAT_NAV.map((item) => (
+                  <option key={item.href} value={item.label} />
                 ))}
               </datalist>
             </div>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-sri-sidebar text-white flex items-center justify-center font-bold text-sm shadow-2xs">
-                {userInitial}
-              </div>
-              <div className="hidden md:block leading-tight">
-                <div className="text-sm font-bold text-slate-800">{userName}</div>
-                <div className="text-[11px] text-slate-500">{userRole}</div>
-              </div>
+            <div ref={profileRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((current) => !current)}
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-slate-50 min-h-11"
+              >
+                <span className="w-9 h-9 rounded-full bg-sri-sidebar text-white flex items-center justify-center font-bold text-sm shadow-2xs">
+                  {userInitial}
+                </span>
+                <span className="hidden md:block leading-tight text-left">
+                  <span className="block text-sm font-bold text-slate-800">
+                    {userName}
+                  </span>
+                  <span className="block text-[11px] text-slate-500">
+                    {userRole}
+                  </span>
+                </span>
+                <i
+                  className={`bi bi-chevron-down text-xs text-slate-500 transition-transform ${
+                    profileOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {profileOpen && (
+                <div
+                  role="menu"
+                  aria-label="Menu akun"
+                  className="absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg z-50"
+                >
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <div className="text-sm font-bold text-slate-900 truncate">
+                      {userName}
+                    </div>
+                    <div className="text-xs text-slate-600 truncate">
+                      {sessionUser?.email || 'Email belum tersedia'}
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      {userRole}
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/dashboard/pengaturan"
+                    role="menuitem"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <i className="bi bi-gear-fill text-slate-500" />
+                    Pengaturan akun
+                  </Link>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 border-t border-slate-100"
+                  >
+                    <i className="bi bi-box-arrow-right" />
+                    Keluar
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -273,4 +360,3 @@ export default function DashboardLayoutClient({
     </div>
   );
 }
-

@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API Register Error:', error);
     return NextResponse.json(
       { message: 'Terjadi kesalahan sistem saat memproses registrasi.' },
