@@ -3,14 +3,11 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { transaksi } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   notFound,
   parseId,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { transaksiPayload } from '@/lib/payloads';
 import { listTransaksi } from '@/lib/queries/keuangan';
@@ -32,9 +29,8 @@ function assertCategory(jenis: string, kategori: string) {
 }
 
 export async function PATCH(request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('cashflow', 'update');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;
@@ -69,9 +65,8 @@ export async function PATCH(request: Request, context: RouteParams) {
 }
 
 export async function DELETE(_request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('cashflow', 'delete');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;

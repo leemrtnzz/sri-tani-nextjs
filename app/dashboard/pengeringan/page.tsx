@@ -1,11 +1,16 @@
 import { Suspense } from 'react';
 import LotClient from '@/components/dashboard/LotClient';
+import AccessDenied from '@/components/ui/AccessDenied';
+import { getPageAccess } from '@/lib/access';
 import { listLot } from '@/lib/queries/operasional';
 import { penggarapOptions } from '@/lib/queries/penggarap';
 
 async function Content() {
+  const access = await getPageAccess('pengeringan');
+  if (!access.allowed) return <AccessDenied />;
+
   const [rows, penggarap] = await Promise.all([listLot(), penggarapOptions()]);
-  return <LotClient rows={rows} penggarap={penggarap} />;
+  return <LotClient rows={rows} penggarap={penggarap} permissions={access.permissions.pengeringan} />;
 }
 
 export default function PengeringanPage() {

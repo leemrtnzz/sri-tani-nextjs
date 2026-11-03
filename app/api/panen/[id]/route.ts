@@ -3,14 +3,11 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { panen } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   notFound,
   parseId,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { panenPayload } from '@/lib/payloads';
 import { quarterLabel, quarterOfDate } from '@/lib/period';
@@ -19,9 +16,8 @@ import { listPanen } from '@/lib/queries/operasional';
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('panen', 'update');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;
@@ -59,9 +55,8 @@ export async function PATCH(request: Request, context: RouteParams) {
 }
 
 export async function DELETE(_request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('panen', 'delete');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;

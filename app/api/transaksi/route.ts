@@ -2,12 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { transaksi } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { transaksiPayload } from '@/lib/payloads';
 import { listTransaksi } from '@/lib/queries/keuangan';
@@ -27,8 +24,8 @@ function assertCategory(jenis: string, kategori: string) {
 }
 
 export async function GET(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
+  const access = await guard('cashflow', 'view');
+  if ('error' in access) return access.error;
 
   try {
     const url = new URL(request.url);
@@ -41,9 +38,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('cashflow', 'create');
+  if ('error' in access) return access.error;
 
   try {
     const body = await readBody(request);

@@ -8,16 +8,19 @@ import StatCard from '@/components/ui/StatCard';
 import { formatDateId, formatRupiah } from '@/lib/format';
 import { statusTagihanOptions } from '@/lib/options';
 import { todayISO } from '@/lib/period';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { Option, PiutangRow } from '@/lib/types';
 
 export default function PiutangClient({
   rows,
   penggarap,
   period,
+  permissions,
 }: {
   rows: PiutangRow[];
   penggarap: Option[];
   period: { bulan: number; tahun: number; label: string; start: string; end: string };
+  permissions: ResourcePermissions;
 }) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState('semua');
@@ -195,6 +198,7 @@ export default function PiutangClient({
       icon="file-earmark-text-fill"
       endpoint="/api/piutang"
       rows={filtered}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah piutang"
@@ -211,21 +215,24 @@ export default function PiutangClient({
         status: row.status,
         keterangan: row.keterangan ?? '',
       })}
-      rowActions={(row) =>
-        row.sisa > 0 ? (
-          <button
-            type="button"
-            onClick={() => markPaid(row)}
-            disabled={quickPending === row.id}
-            className="mr-1 min-h-9 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
-          >
-            {quickPending === row.id ? (
-              <i className="bi bi-arrow-repeat animate-spin" />
-            ) : (
-              'Lunasi'
-            )}
-          </button>
-        ) : null
+      rowActions={
+        permissions.update
+          ? (row) =>
+              row.sisa > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => markPaid(row)}
+                  disabled={quickPending === row.id}
+                  className="mr-1 min-h-9 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+                >
+                  {quickPending === row.id ? (
+                    <i className="bi bi-arrow-repeat animate-spin" />
+                  ) : (
+                    'Lunasi'
+                  )}
+                </button>
+              ) : null
+          : undefined
       }
       extraHeader={
         <div className="flex flex-wrap items-end justify-between gap-3">

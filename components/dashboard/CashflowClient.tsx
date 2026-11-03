@@ -19,6 +19,7 @@ import {
   kategoriTransaksiOptions,
 } from '@/lib/options';
 import { todayISO } from '@/lib/period';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type {
   BatchRow,
   CashflowSummary,
@@ -36,6 +37,7 @@ export default function CashflowClient({
   penggarap,
   batch,
   period,
+  permissions,
 }: {
   rows: TransaksiRow[];
   summary: CashflowSummary;
@@ -44,6 +46,7 @@ export default function CashflowClient({
   penggarap: Option[];
   batch: BatchRow[];
   period: { bulan: number; tahun: number; label: string; start: string; end: string };
+  permissions: ResourcePermissions;
 }) {
   const defaultDate =
     todayISO() >= period.start && todayISO() <= period.end ? todayISO() : period.start;
@@ -188,6 +191,7 @@ export default function CashflowClient({
       icon="bar-chart-fill"
       endpoint="/api/transaksi"
       rows={rows}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah transaksi"

@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, email, username, password, role } = body;
+    const { nama, email, username, password } = body;
 
     // Validasi kelengkapan data
     if (!nama || !email || !username || !password) {
@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanUsername = String(username).trim().toLowerCase();
     const cleanPassword = String(password);
-    const validRoles = ['admin', 'petugas', 'user'];
-    const chosenRole: 'admin' | 'petugas' | 'user' = validRoles.includes(role) ? role : 'user';
+    // Registrasi mandiri selalu menjadi penggarap. Peran lain dibuat oleh master.
+    const chosenRole = 'penggarap' as const;
 
     if (cleanNama.length < 2) {
       return NextResponse.json(

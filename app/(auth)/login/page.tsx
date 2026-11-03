@@ -96,7 +96,9 @@ function LoginForm() {
 
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-6 sm:p-8">
             <h2 className="text-2xl font-bold text-slate-800">Masuk ke akun</h2>
-            <p className="text-sm text-slate-600 mt-1">Gunakan akun petugas mitra atau administrator.</p>
+            <p className="text-sm text-slate-600 mt-1">
+              Gunakan akun Master, Admin, Petugas, atau Penggarap.
+            </p>
 
             {registered && (
               <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm flex items-center gap-2">

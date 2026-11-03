@@ -9,6 +9,7 @@ import StatCard from '@/components/ui/StatCard';
 import { formatHa, label, statusBadgeClass } from '@/lib/format';
 import { PLOT_COLORS, polygonAreaHa, type Coordinate } from '@/lib/geo';
 import { statusPetakOptions } from '@/lib/options';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { Option, PetakRow } from '@/lib/types';
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
@@ -19,6 +20,7 @@ const MapEditor = dynamic(() => import('@/components/dashboard/MapEditor'), {
 type LahanClientProps = {
   rows: PetakRow[];
   penggarap: Option[];
+  permissions: ResourcePermissions;
 };
 
 type FormState = {
@@ -41,7 +43,11 @@ const emptyForm = (): FormState => ({
   luasHa: 0,
 });
 
-export default function LahanClient({ rows, penggarap }: LahanClientProps) {
+export default function LahanClient({
+  rows,
+  penggarap,
+  permissions,
+}: LahanClientProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -206,23 +212,25 @@ export default function LahanClient({ rows, penggarap }: LahanClientProps) {
             </div>
           </div>
 
-          {penggarap.length > 0 ? (
-            <button
-              type="button"
-              onClick={openCreate}
-              className="min-h-11 inline-flex items-center gap-2 rounded-lg bg-sri-sidebar px-4 text-sm font-semibold text-white hover:bg-sri-active"
-            >
-              <i className="bi bi-plus-lg" />
-              Tambah petak
-            </button>
-          ) : (
-            <Link
-              href="/dashboard/penggarap"
-              className="min-h-11 inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-900 hover:bg-amber-100"
-            >
-              <i className="bi bi-person-plus" />
-              Tambah penggarap dulu
-            </Link>
+          {permissions.create && (
+            penggarap.length > 0 ? (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="min-h-11 inline-flex items-center gap-2 rounded-lg bg-sri-sidebar px-4 text-sm font-semibold text-white hover:bg-sri-active"
+              >
+                <i className="bi bi-plus-lg" />
+                Tambah petak
+              </button>
+            ) : (
+              <Link
+                href="/dashboard/penggarap"
+                className="min-h-11 inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+              >
+                <i className="bi bi-person-plus" />
+                Tambah penggarap dulu
+              </Link>
+            )
           )}
         </div>
       </div>
@@ -363,25 +371,32 @@ export default function LahanClient({ rows, penggarap }: LahanClientProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(row)}
-                        aria-label={`Ubah petak ${row.nama}`}
-                        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                      >
-                        <i className="bi bi-pencil-square" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleting(row);
-                          setDeleteError('');
-                        }}
-                        aria-label={`Hapus petak ${row.nama}`}
-                        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-red-600 hover:bg-red-50"
-                      >
-                        <i className="bi bi-trash3" />
-                      </button>
+                      {permissions.update && (
+                        <button
+                          type="button"
+                          onClick={() => openEdit(row)}
+                          aria-label={`Ubah petak ${row.nama}`}
+                          className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        >
+                          <i className="bi bi-pencil-square" />
+                        </button>
+                      )}
+                      {permissions.delete && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleting(row);
+                            setDeleteError('');
+                          }}
+                          aria-label={`Hapus petak ${row.nama}`}
+                          className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-red-600 hover:bg-red-50"
+                        >
+                          <i className="bi bi-trash3" />
+                        </button>
+                      )}
+                      {!permissions.update && !permissions.delete && (
+                        <span className="text-slate-400">-</span>
+                      )}
                     </td>
                   </tr>
                 ))

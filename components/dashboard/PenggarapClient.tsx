@@ -13,9 +13,16 @@ import {
   faseOptions,
   statusPenggarapOptions,
 } from '@/lib/options';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { PenggarapRow } from '@/lib/types';
 
-export default function PenggarapClient({ rows }: { rows: PenggarapRow[] }) {
+export default function PenggarapClient({
+  rows,
+  permissions,
+}: {
+  rows: PenggarapRow[];
+  permissions: ResourcePermissions;
+}) {
   const columns: ColumnDef<PenggarapRow>[] = [
     {
       key: 'nama',
@@ -154,9 +161,9 @@ export default function PenggarapClient({ rows }: { rows: PenggarapRow[] }) {
     },
     {
       name: 'username',
-      label: 'Username akun petugas',
+      label: 'Username akun penggarap',
       placeholder: 'contoh: slamet',
-      help: 'Isi untuk membuat akun petugas. Kosongkan jika penggarap belum perlu akun.',
+      help: 'Isi untuk membuat akun penggarap. Kosongkan jika penggarap belum perlu akun.',
     },
     {
       name: 'email',
@@ -181,10 +188,11 @@ export default function PenggarapClient({ rows }: { rows: PenggarapRow[] }) {
   return (
     <CrudPage<PenggarapRow>
       title="Data Penggarap"
-      description="Kelola profil penggarap, status tanam, luas lahan, dan akun petugas lapangan."
+      description="Kelola profil penggarap, status tanam, luas lahan, dan akun penggarap."
       icon="people-fill"
       endpoint="/api/penggarap"
       rows={rows}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah penggarap"
@@ -223,7 +231,7 @@ export default function PenggarapClient({ rows }: { rows: PenggarapRow[] }) {
           />
           <StatCard
             icon="person-badge-fill"
-            label="Punya akun petugas"
+            label="Punya akun penggarap"
             value={rows.filter((row) => row.userId).length}
             hint="Dapat masuk ke dashboard"
             tone="blue"

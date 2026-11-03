@@ -89,6 +89,7 @@ async function seed() {
       'petak_lahan',
       'penggarap',
       'pengaturan',
+      'role_permissions',
       'users',
     ];
 
@@ -97,14 +98,24 @@ async function seed() {
       await conn.query(`TRUNCATE TABLE \`${table}\``);
     }
 
-    console.log('1. Membuat akun admin dan akun petugas penggarap...');
+    console.log('1. Membuat akun master, admin, petugas, dan penggarap...');
     const passwordHash = await bcrypt.hash('password123', 10);
 
-    const [adminResult] = await conn.query(
+    const [masterResult] = await conn.query(
+      `INSERT INTO users (nama, email, username, password, role) VALUES (?, ?, ?, ?, 'master')`,
+      ['Master Sistem', 'master@sritani.local', 'master', passwordHash],
+    );
+    const masterId = masterResult.insertId;
+
+    await conn.query(
       `INSERT INTO users (nama, email, username, password, role) VALUES (?, ?, ?, ?, 'admin')`,
       ['Administrator Sistem', 'admin@sritani.local', 'admin', passwordHash],
     );
-    const adminId = adminResult.insertId;
+
+    await conn.query(
+      `INSERT INTO users (nama, email, username, password, role) VALUES (?, ?, ?, ?, 'petugas')`,
+      ['Petugas Lapangan', 'petugas@sritani.local', 'petugas', passwordHash],
+    );
 
     const penggarapSeed = [
       {
@@ -166,7 +177,7 @@ async function seed() {
     const penggarapIds = {};
     for (const person of penggarapSeed) {
       const [userResult] = await conn.query(
-        `INSERT INTO users (nama, email, username, password, role) VALUES (?, ?, ?, ?, 'petugas')`,
+        `INSERT INTO users (nama, email, username, password, role) VALUES (?, ?, ?, ?, 'penggarap')`,
         [
           person.nama,
           `${person.username}@sritani.local`,
@@ -196,7 +207,7 @@ async function seed() {
       [
         'SRI TANI',
         `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()}`,
-        adminId,
+        masterId,
       ],
     );
 
@@ -771,8 +782,11 @@ async function seed() {
     await conn.query('SET FOREIGN_KEY_CHECKS = 1');
 
     console.log('\n--- SEEDER BERHASIL DIJALANKAN ---');
-    console.log('Akun admin : admin / password123');
-    console.log('Akun petugas penggarap (semua kata sandi: password123):');
+    console.log('Akun sistem (kata sandi: password123):');
+    console.log('- master (Master Sistem)');
+    console.log('- admin (Administrator Sistem)');
+    console.log('- petugas (Petugas Lapangan)');
+    console.log('Akun penggarap (kata sandi: password123):');
     for (const person of penggarapSeed) {
       console.log(`- ${person.username} (${person.nama})`);
     }

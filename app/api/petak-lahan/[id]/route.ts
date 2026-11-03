@@ -3,14 +3,11 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { petakLahan } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   notFound,
   parseId,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { petakPayload } from '@/lib/payloads';
 import { listPetak, syncPenggarapLuas } from '@/lib/queries/lahan';
@@ -18,9 +15,8 @@ import { listPetak, syncPenggarapLuas } from '@/lib/queries/lahan';
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('lahan', 'update');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;
@@ -56,9 +52,8 @@ export async function PATCH(request: Request, context: RouteParams) {
 }
 
 export async function DELETE(_request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('lahan', 'delete');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;

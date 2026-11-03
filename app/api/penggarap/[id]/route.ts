@@ -3,14 +3,11 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { penggarap } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   notFound,
   parseId,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { accountPayload, penggarapPayload } from '@/lib/payloads';
 import { listPenggarap } from '@/lib/queries/penggarap';
@@ -19,9 +16,8 @@ import { createPetugasAccount, updatePetugasAccount } from '@/lib/user-account';
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('penggarap', 'update');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;
@@ -75,9 +71,8 @@ export async function PATCH(request: Request, context: RouteParams) {
 }
 
 export async function DELETE(_request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('penggarap', 'delete');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;

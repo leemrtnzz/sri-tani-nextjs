@@ -10,6 +10,7 @@ import {
   todayISO,
 } from '@/lib/period';
 import { statusBatchOptions } from '@/lib/options';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { BatchRow, Option } from '@/lib/types';
 
 function ScheduleCard({ batch }: { batch: BatchRow }) {
@@ -61,10 +62,12 @@ export default function BatchClient({
   rows,
   penggarap,
   lot,
+  permissions,
 }: {
   rows: BatchRow[];
   penggarap: Option[];
   lot: Option[];
+  permissions: ResourcePermissions;
 }) {
   const today = todayISO();
   const todays = rows.filter((row) => relativeSchedule(row.tanggal) === 'hari-ini');
@@ -225,6 +228,7 @@ export default function BatchClient({
       icon="calendar2-week-fill"
       endpoint="/api/batch-giling"
       rows={rows}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah batch"

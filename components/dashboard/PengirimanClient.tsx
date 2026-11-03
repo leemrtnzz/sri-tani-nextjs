@@ -9,6 +9,7 @@ import StatCard from '@/components/ui/StatCard';
 import { formatDateId, formatKg, label, statusBadgeClass } from '@/lib/format';
 import { statusPengirimanOptions } from '@/lib/options';
 import { todayISO } from '@/lib/period';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { BatchRow, PengirimanRow, TokoRow } from '@/lib/types';
 
 const STATUS_FLOW = ['dimuat', 'dalam_perjalanan', 'diterima'];
@@ -46,11 +47,15 @@ export default function PengirimanClient({
   toko,
   batch,
   period,
+  permissions,
+  tokoView,
 }: {
   rows: PengirimanRow[];
   toko: TokoRow[];
   batch: BatchRow[];
   period: { bulan: number; tahun: number; label: string; start: string; end: string };
+  permissions: ResourcePermissions;
+  tokoView: boolean;
 }) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState('semua');
@@ -254,6 +259,7 @@ export default function PengirimanClient({
       icon="truck"
       endpoint="/api/pengiriman"
       rows={filtered}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Buat pengiriman"
@@ -274,21 +280,24 @@ export default function PengirimanClient({
         penerima: row.penerima ?? '',
         catatan: row.catatan ?? '',
       })}
-      rowActions={(row) =>
-        row.status !== 'diterima' ? (
-          <button
-            type="button"
-            onClick={() => markReceived(row)}
-            disabled={quickPending === row.id}
-            className="mr-1 min-h-9 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
-          >
-            {quickPending === row.id ? (
-              <i className="bi bi-arrow-repeat animate-spin" />
-            ) : (
-              'Terima'
-            )}
-          </button>
-        ) : null
+      rowActions={
+        permissions.update
+          ? (row) =>
+              row.status !== 'diterima' ? (
+                <button
+                  type="button"
+                  onClick={() => markReceived(row)}
+                  disabled={quickPending === row.id}
+                  className="mr-1 min-h-9 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+                >
+                  {quickPending === row.id ? (
+                    <i className="bi bi-arrow-repeat animate-spin" />
+                  ) : (
+                    'Terima'
+                  )}
+                </button>
+              ) : null
+          : undefined
       }
       extraHeader={
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -316,30 +325,34 @@ export default function PengirimanClient({
                 ))}
               </select>
             </div>
-            <Link
-              href="/dashboard/toko"
-              className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-            >
-              <i className="bi bi-shop" />
-              Kelola toko
-            </Link>
+            {tokoView && (
+              <Link
+                href="/dashboard/toko"
+                className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+              >
+                <i className="bi bi-shop" />
+                Kelola toko
+              </Link>
+            )}
           </div>
         </div>
       }
       extraTop={
         <div className="space-y-3">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-700 flex flex-wrap items-center justify-between gap-2">
-            <span>
-              Toko tujuan diambil langsung dari menu Data Toko. Tambahkan toko baru
-              lewat tombol Kelola toko.
-            </span>
-            <Link
-              href="/dashboard/toko"
-              className="font-semibold text-sri-green hover:underline"
-            >
-              Buka Data Toko
-            </Link>
-          </div>
+          {tokoView && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-700 flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Toko tujuan diambil langsung dari menu Data Toko. Tambahkan toko baru
+                lewat tombol Kelola toko.
+              </span>
+              <Link
+                href="/dashboard/toko"
+                className="font-semibold text-sri-green hover:underline"
+              >
+                Buka Data Toko
+              </Link>
+            </div>
+          )}
 
           {quickNotice && (
             <div

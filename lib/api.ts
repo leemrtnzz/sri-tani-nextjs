@@ -1,10 +1,36 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import {
+  can,
+  PermissionError,
+  type PermissionAction,
+  type ResourceKey,
+} from './permissions';
 import { ValidationError } from './validation';
 
 export async function currentUser() {
   const session = await auth();
   return session?.user ?? null;
+}
+
+export async function guard(
+  resource: ResourceKey,
+  action: PermissionAction,
+) {
+  const user = await currentUser();
+  if (!user) return { error: unauthorized() } as const;
+
+  const role = (user as { role?: string }).role;
+  if (!(await can(role, resource, action))) {
+    return {
+      error: apiError(
+        'Peran akun Anda tidak memiliki izin untuk melakukan aksi ini.',
+        403,
+      ),
+    } as const;
+  }
+
+  return { user, role } as const;
 }
 
 export function apiError(message: string, status = 400) {
@@ -26,6 +52,10 @@ export function notFound(message = 'Data tidak ditemukan.') {
 export function handleRouteError(error: unknown) {
   if (error instanceof ValidationError) {
     return apiError(error.message, 400);
+  }
+
+  if (error instanceof PermissionError) {
+    return apiError(error.message, 403);
   }
 
   const databaseError = error as {

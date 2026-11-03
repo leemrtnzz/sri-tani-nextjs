@@ -3,14 +3,11 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { pengiriman } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   notFound,
   parseId,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { todayISO } from '@/lib/period';
 import { pengirimanPayload } from '@/lib/payloads';
@@ -19,9 +16,8 @@ import { listPengiriman } from '@/lib/queries/keuangan';
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('pengiriman', 'update');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;
@@ -56,9 +52,8 @@ export async function PATCH(request: Request, context: RouteParams) {
 }
 
 export async function DELETE(_request: Request, context: RouteParams) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('pengiriman', 'delete');
+  if ('error' in access) return access.error;
 
   try {
     const { id: rawId } = await context.params;

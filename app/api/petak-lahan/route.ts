@@ -2,19 +2,16 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { petakLahan } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { petakPayload } from '@/lib/payloads';
 import { listPetak, syncPenggarapLuas } from '@/lib/queries/lahan';
 
 export async function GET() {
-  const user = await currentUser();
-  if (!user) return unauthorized();
+  const access = await guard('lahan', 'view');
+  if ('error' in access) return access.error;
 
   try {
     return NextResponse.json({ data: await listPetak() });
@@ -24,9 +21,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('lahan', 'create');
+  if ('error' in access) return access.error;
 
   try {
     const body = await readBody(request);

@@ -5,6 +5,7 @@ import QuarterFilter from '@/components/dashboard/QuarterFilter';
 import StatCard from '@/components/ui/StatCard';
 import { formatDateId, formatKg, formatNumber, initials } from '@/lib/format';
 import { quarterLabel, todayISO } from '@/lib/period';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { HarvestRankRow, Option, PanenRow } from '@/lib/types';
 
 export default function PanenClient({
@@ -13,12 +14,14 @@ export default function PanenClient({
   penggarap,
   tahun,
   kuartal,
+  permissions,
 }: {
   rows: PanenRow[];
   ranking: HarvestRankRow[];
   penggarap: Option[];
   tahun: number;
   kuartal: number;
+  permissions: ResourcePermissions;
 }) {
   const totalGabah = rows.reduce((sum, row) => sum + (row.totalGabahKg ?? 0), 0);
   const rataHasil = rows.length
@@ -143,6 +146,7 @@ export default function PanenClient({
       icon="trophy-fill"
       endpoint="/api/panen"
       rows={rows}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah panen"

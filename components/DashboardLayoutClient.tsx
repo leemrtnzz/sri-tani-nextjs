@@ -5,7 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import anime from 'animejs';
-import { NAV, FLAT_NAV, type NavItem } from '@/lib/navigation';
+import { NAV, type NavItem } from '@/lib/navigation';
+import {
+  ROLE_LABELS,
+  type PermissionMap,
+  type Role,
+} from '@/lib/permission-meta';
 
 const row = 'flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-colors ';
 const on = 'bg-sri-active text-white font-semibold';
@@ -13,8 +18,12 @@ const off = 'text-white/85 hover:bg-sri-hover hover:text-white font-medium';
 
 export default function DashboardLayoutClient({
   children,
+  role,
+  permissions,
 }: {
   children: React.ReactNode;
+  role: Role;
+  permissions: PermissionMap;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -40,14 +49,29 @@ export default function DashboardLayoutClient({
   const userName =
     sessionUser?.nama || sessionUser?.name || sessionUser?.username || 'Pengguna';
 
-  const userRole =
-    sessionUser?.role === 'admin'
-      ? 'Administrator'
-      : sessionUser?.role === 'petugas'
-        ? 'Petugas Lapangan'
-        : 'User Mitra';
-
+  const userRole = ROLE_LABELS[role];
   const userInitial = userName.charAt(0).toUpperCase();
+
+  const visibleNav = NAV.filter((item) => {
+    if (item.masterOnly) return role === 'master';
+    if (item.children) {
+      return item.children.some(
+        (child) => !child.resource || permissions[child.resource].view,
+      );
+    }
+    return !item.resource || permissions[item.resource].view;
+  }).map((item) =>
+    item.children
+      ? {
+          ...item,
+          children: item.children.filter(
+            (child) => !child.resource || permissions[child.resource].view,
+          ),
+        }
+      : item,
+  );
+
+  const flatNav = visibleNav.flatMap((item) => item.children ?? [item]);
 
   useEffect(() => {
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -110,7 +134,7 @@ export default function DashboardLayoutClient({
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter') return;
-    const hit = FLAT_NAV.find(
+    const hit = flatNav.find(
       (item) => item.label.toLowerCase() === searchQuery.trim().toLowerCase(),
     );
     if (hit) router.push(hit.href);
@@ -187,7 +211,7 @@ export default function DashboardLayoutClient({
           className="p-3 flex-1 flex flex-col space-y-1 overflow-y-auto"
           aria-label="Menu utama"
         >
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             if (item.children) {
               const groupActive = item.children.some((child) => isActive(child.href));
               const expanded = openGroups[item.label] ?? groupActive;
@@ -278,7 +302,7 @@ export default function DashboardLayoutClient({
                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:bg-white focus:border-sri-green focus:ring-2 focus:ring-sri-green/15 transition-colors"
               />
               <datalist id="navList">
-                {FLAT_NAV.map((item) => (
+                {flatNav.map((item) => (
                   <option key={item.href} value={item.label} />
                 ))}
               </datalist>
@@ -339,6 +363,18 @@ export default function DashboardLayoutClient({
                     <i className="bi bi-gear-fill text-slate-500" />
                     Pengaturan akun
                   </Link>
+
+                  {role === 'master' && (
+                    <Link
+                      href="/dashboard/akses"
+                      role="menuitem"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                    >
+                      <i className="bi bi-shield-lock-fill text-slate-500" />
+                      Hak Akses
+                    </Link>
+                  )}
 
                   <button
                     type="button"

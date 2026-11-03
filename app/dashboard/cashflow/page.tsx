@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
 import CashflowClient from '@/components/dashboard/CashflowClient';
+import AccessDenied from '@/components/ui/AccessDenied';
+import { getPageAccess } from '@/lib/access';
 import { listBatch } from '@/lib/queries/operasional';
 import { penggarapOptions } from '@/lib/queries/penggarap';
 import {
@@ -19,6 +21,9 @@ type SearchParams = Promise<{
 async function Content({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   await connection();
+  const access = await getPageAccess('cashflow');
+  if (!access.allowed) return <AccessDenied />;
+
   const period = parsePeriod(params.bulan, params.tahun);
 
   const [rows, toko, penggarap, batch, monthly] = await Promise.all([
@@ -40,6 +45,7 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
       penggarap={penggarap}
       batch={batch}
       period={period}
+      permissions={access.permissions.cashflow}
     />
   );
 }

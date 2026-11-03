@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
 import PengirimanClient from '@/components/dashboard/PengirimanClient';
+import AccessDenied from '@/components/ui/AccessDenied';
+import { getPageAccess } from '@/lib/access';
 import { listBatch } from '@/lib/queries/operasional';
 import { listPengiriman, listToko } from '@/lib/queries/keuangan';
 import { parsePeriod } from '@/lib/period';
@@ -13,6 +15,9 @@ type SearchParams = Promise<{
 async function Content({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   await connection();
+  const access = await getPageAccess('pengiriman');
+  if (!access.allowed) return <AccessDenied />;
+
   const period = parsePeriod(params.bulan, params.tahun);
 
   const [rows, toko, batch] = await Promise.all([
@@ -22,7 +27,14 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
   ]);
 
   return (
-    <PengirimanClient rows={rows} toko={toko} batch={batch} period={period} />
+    <PengirimanClient
+      rows={rows}
+      toko={toko}
+      batch={batch}
+      period={period}
+      permissions={access.permissions.pengiriman}
+      tokoView={access.permissions.toko.view}
+    />
   );
 }
 

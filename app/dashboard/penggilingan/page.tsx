@@ -1,15 +1,20 @@
 import { Suspense } from 'react';
 import BatchClient from '@/components/dashboard/BatchClient';
+import AccessDenied from '@/components/ui/AccessDenied';
+import { getPageAccess } from '@/lib/access';
 import { listBatch, lotOptions } from '@/lib/queries/operasional';
 import { penggarapOptions } from '@/lib/queries/penggarap';
 
 async function Content() {
+  const access = await getPageAccess('penggilingan');
+  if (!access.allowed) return <AccessDenied />;
+
   const [rows, penggarap, lot] = await Promise.all([
     listBatch(),
     penggarapOptions(),
     lotOptions(),
   ]);
-  return <BatchClient rows={rows} penggarap={penggarap} lot={lot} />;
+  return <BatchClient rows={rows} penggarap={penggarap} lot={lot} permissions={access.permissions.penggilingan} />;
 }
 
 export default function PenggilinganPage() {

@@ -12,7 +12,6 @@ export default function RegisterPage() {
     email: '',
     username: '',
     password: '',
-    role: 'user',
   });
 
   const [showPw, setShowPw] = useState(false);
@@ -236,24 +235,12 @@ export default function RegisterPage() {
                 {errors.password && <p className="mt-1 text-xs text-red-700">{errors.password}</p>}
               </div>
 
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Peran Akun
-                </label>
-                <div className="relative">
-                  <i className="bi bi-shield-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 min-h-11 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:border-sri-green focus:ring-2 focus:ring-sri-green/20 cursor-pointer"
-                  >
-                    <option value="user">User (Mitra Tani)</option>
-                    <option value="petugas">Petugas (Petugas Lapangan)</option>
-                    <option value="admin">Admin (Administrator)</option>
-                  </select>
-                </div>
+              <div className="rounded-lg border border-sky-200 bg-sky-50 px-3.5 py-3 text-sm text-sky-900 flex items-start gap-2">
+                <i className="bi bi-info-circle-fill mt-0.5" />
+                <span>
+                  Akun baru otomatis terdaftar sebagai Penggarap. Perubahan role
+                  dilakukan oleh Master melalui pengaturan hak akses.
+                </span>
               </div>
 
               <button

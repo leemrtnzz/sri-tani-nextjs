@@ -2,12 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { piutang } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { piutangPayload } from '@/lib/payloads';
 import { todayISO } from '@/lib/period';
@@ -15,8 +12,8 @@ import { resolvePiutangStatus } from '@/lib/piutang';
 import { listPiutang } from '@/lib/queries/keuangan';
 
 export async function GET(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
+  const access = await guard('piutang', 'view');
+  if ('error' in access) return access.error;
 
   try {
     const url = new URL(request.url);
@@ -29,9 +26,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('piutang', 'create');
+  if ('error' in access) return access.error;
 
   try {
     const body = await readBody(request);

@@ -1,5 +1,15 @@
 import { Suspense } from 'react';
 import DashboardLayoutClient from '@/components/DashboardLayoutClient';
+import { getSessionAccess } from '@/lib/access';
+
+async function Content({ children }: { children: React.ReactNode }) {
+  const { role, permissions } = await getSessionAccess();
+  return (
+    <DashboardLayoutClient role={role} permissions={permissions}>
+      {children}
+    </DashboardLayoutClient>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -14,7 +24,7 @@ export default function DashboardLayout({
         </div>
       }
     >
-      <DashboardLayoutClient>{children}</DashboardLayoutClient>
+      <Content>{children}</Content>
     </Suspense>
   );
 }

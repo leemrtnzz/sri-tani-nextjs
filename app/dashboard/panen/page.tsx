@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
 import PanenClient from '@/components/dashboard/PanenClient';
+import AccessDenied from '@/components/ui/AccessDenied';
+import { getPageAccess } from '@/lib/access';
 import {
   harvestRanking,
   listPanen,
@@ -16,6 +18,9 @@ type SearchParams = Promise<{
 async function Content({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   await connection();
+  const access = await getPageAccess('panen');
+  if (!access.allowed) return <AccessDenied />;
+
   const tahun = parseYear(params.tahun);
   const kuartal = parseQuarter(params.kuartal);
   const range = quarterRange(tahun, kuartal);
@@ -33,6 +38,7 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
       penggarap={penggarap}
       tahun={tahun}
       kuartal={kuartal}
+      permissions={access.permissions.panen}
     />
   );
 }

@@ -4,14 +4,17 @@ import CrudPage, { type ColumnDef, type FieldDef } from '@/components/ui/CrudPag
 import StatCard from '@/components/ui/StatCard';
 import { formatKg, formatNumber, label } from '@/lib/format';
 import { statusLotOptions } from '@/lib/options';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { LotRow, Option } from '@/lib/types';
 
 export default function LotClient({
   rows,
   penggarap,
+  permissions,
 }: {
   rows: LotRow[];
   penggarap: Option[];
+  permissions: ResourcePermissions;
 }) {
   const totalKapasitas = rows.reduce((sum, row) => sum + row.kapasitasKg, 0);
   const totalGabah = rows.reduce((sum, row) => sum + row.gabahKg, 0);
@@ -138,6 +141,7 @@ export default function LotClient({
       icon="house-gear-fill"
       endpoint="/api/lot-jemur"
       rows={rows}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah lot"

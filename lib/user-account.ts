@@ -50,7 +50,7 @@ export async function createPetugasAccount(input: AccountInput): Promise<number>
       email,
       username,
       password: hashed,
-      role: 'petugas',
+      role: 'penggarap',
     })
     .$returningId();
 

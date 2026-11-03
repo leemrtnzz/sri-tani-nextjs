@@ -2,9 +2,16 @@
 
 import CrudPage, { type ColumnDef, type FieldDef } from '@/components/ui/CrudPage';
 import StatCard from '@/components/ui/StatCard';
+import type { ResourcePermissions } from '@/lib/permissions';
 import type { TokoRow } from '@/lib/types';
 
-export default function TokoClient({ rows }: { rows: TokoRow[] }) {
+export default function TokoClient({
+  rows,
+  permissions,
+}: {
+  rows: TokoRow[];
+  permissions: ResourcePermissions;
+}) {
   const columns: ColumnDef<TokoRow>[] = [
     {
       key: 'nama',
@@ -61,6 +68,7 @@ export default function TokoClient({ rows }: { rows: TokoRow[] }) {
       icon="shop"
       endpoint="/api/toko"
       rows={rows}
+      permissions={permissions}
       columns={columns}
       fields={fields}
       addLabel="Tambah toko"

@@ -33,6 +33,13 @@ export type ColumnDef<T> = {
 
 export type FormValues = Record<string, string | number | boolean>;
 
+export type CrudPermissions = {
+  view: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+};
+
 type CrudPageProps<T extends { id: number }> = {
   title: string;
   description: string;
@@ -51,6 +58,7 @@ type CrudPageProps<T extends { id: number }> = {
   extraTop?: ReactNode;
   extraHeader?: ReactNode;
   rowActions?: (row: T) => ReactNode;
+  permissions: CrudPermissions;
 };
 
 function initialValues(fields: FieldDef[]): FormValues {
@@ -127,6 +135,7 @@ export default function CrudPage<T extends { id: number }>({
   extraTop,
   extraHeader,
   rowActions,
+  permissions,
 }: CrudPageProps<T>) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -325,14 +334,16 @@ export default function CrudPage<T extends { id: number }>({
               <p className="text-sm text-slate-600 mt-0.5 max-w-2xl">{description}</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="min-h-11 inline-flex items-center gap-2 rounded-lg bg-sri-sidebar px-4 text-sm font-semibold text-white hover:bg-sri-active"
-          >
-            <i className="bi bi-plus-lg" />
-            {addLabel}
-          </button>
+          {permissions.create && (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="min-h-11 inline-flex items-center gap-2 rounded-lg bg-sri-sidebar px-4 text-sm font-semibold text-white hover:bg-sri-active"
+            >
+              <i className="bi bi-plus-lg" />
+              {addLabel}
+            </button>
+          )}
         </div>
         {extraHeader}
       </div>
@@ -388,7 +399,7 @@ export default function CrudPage<T extends { id: number }>({
                           ? emptyDescription
                           : 'Ubah kata kunci pencarian atau kosongkan kolom pencarian.'}
                       </p>
-                      {rows.length === 0 && (
+                      {rows.length === 0 && permissions.create && (
                         <button
                           type="button"
                           onClick={openCreate}
@@ -414,25 +425,32 @@ export default function CrudPage<T extends { id: number }>({
                     ))}
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       {rowActions?.(row)}
-                      <button
-                        type="button"
-                        onClick={() => openEdit(row)}
-                        aria-label={`Ubah data ${rowKey(row)}`}
-                        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                      >
-                        <i className="bi bi-pencil-square" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleting(row);
-                          setDeleteError('');
-                        }}
-                        aria-label={`Hapus data ${rowKey(row)}`}
-                        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-red-600 hover:bg-red-50"
-                      >
-                        <i className="bi bi-trash3" />
-                      </button>
+                      {permissions.update && (
+                        <button
+                          type="button"
+                          onClick={() => openEdit(row)}
+                          aria-label={`Ubah data ${rowKey(row)}`}
+                          className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        >
+                          <i className="bi bi-pencil-square" />
+                        </button>
+                      )}
+                      {permissions.delete && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleting(row);
+                            setDeleteError('');
+                          }}
+                          aria-label={`Hapus data ${rowKey(row)}`}
+                          className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-md text-red-600 hover:bg-red-50"
+                        >
+                          <i className="bi bi-trash3" />
+                        </button>
+                      )}
+                      {!rowActions && !permissions.update && !permissions.delete && (
+                        <span className="text-slate-400">-</span>
+                      )}
                     </td>
                   </tr>
                 ))

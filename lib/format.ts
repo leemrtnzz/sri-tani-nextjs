@@ -96,8 +96,10 @@ export const STATUS_LABELS: Record<string, string> = {
   operasional: 'Operasional',
   penjualan: 'Penjualan',
   lain: 'Lainnya',
+  master: 'Master',
   admin: 'Administrator',
-  petugas: 'Petugas',
+  petugas: 'Petugas Lapangan',
+  penggarap: 'Penggarap',
   user: 'User',
 };
 

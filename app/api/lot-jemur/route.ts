@@ -2,12 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { lotJemur } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { nextLotKode } from '@/lib/kodes';
 import { lotPayload } from '@/lib/payloads';
@@ -15,8 +12,8 @@ import { listLot } from '@/lib/queries/operasional';
 import { ValidationError } from '@/lib/validation';
 
 export async function GET() {
-  const user = await currentUser();
-  if (!user) return unauthorized();
+  const access = await guard('pengeringan', 'view');
+  if ('error' in access) return access.error;
 
   try {
     return NextResponse.json({ data: await listLot() });
@@ -26,9 +23,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('pengeringan', 'create');
+  if ('error' in access) return access.error;
 
   try {
     const body = await readBody(request);

@@ -3,20 +3,17 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { penggarap } from '@/db/schema';
 import {
-  currentUser,
-  forbidden,
+  guard,
   handleRouteError,
   readBody,
-  requireEditor,
-  unauthorized,
 } from '@/lib/api';
 import { accountPayload, penggarapPayload } from '@/lib/payloads';
 import { listPenggarap } from '@/lib/queries/penggarap';
 import { createPetugasAccount } from '@/lib/user-account';
 
 export async function GET() {
-  const user = await currentUser();
-  if (!user) return unauthorized();
+  const access = await guard('penggarap', 'view');
+  if ('error' in access) return access.error;
 
   try {
     return NextResponse.json({ data: await listPenggarap() });
@@ -26,9 +23,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (!requireEditor((user as { role?: string }).role)) return forbidden();
+  const access = await guard('penggarap', 'create');
+  if ('error' in access) return access.error;
 
   try {
     const body = await readBody(request);

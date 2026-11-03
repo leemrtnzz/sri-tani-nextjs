@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   date,
   decimal,
   index,
@@ -30,7 +31,7 @@ export const jenisTransaksiValues = ['pemasukan', 'pengeluaran'] as const;
 export const kategoriTransaksiValues = ['modal', 'operasional', 'penjualan', 'lain'] as const;
 export const jenisTernakValues = ['sapi_potong', 'kambing', 'unggas'] as const;
 export const kondisiTernakValues = ['sehat', 'perlu_vaksin', 'sakit'] as const;
-export const roleValues = ['admin', 'petugas', 'user'] as const;
+export const roleValues = ['master', 'admin', 'petugas', 'penggarap'] as const;
 
 export const fasePlantEnum = (name: string) => mysqlEnum(name, fasePlantValues);
 export const statusPenggarapEnum = (name: string) => mysqlEnum(name, statusPenggarapValues);
@@ -64,7 +65,7 @@ export const users = mysqlTable(
     email: varchar('email', { length: 190 }).notNull(),
     username: varchar('username', { length: 60 }).notNull(),
     password: varchar('password', { length: 255 }).notNull(),
-    role: roleEnum('role').default('user').notNull(),
+    role: roleEnum('role').default('penggarap').notNull(),
     ...timestamps,
   },
   (t) => [
@@ -80,6 +81,23 @@ export const pengaturan = mysqlTable('pengaturan', {
   userId: int('user_id').references(() => users.id, { onDelete: 'set null' }),
   ...timestamps,
 });
+
+export const rolePermissions = mysqlTable(
+  'role_permissions',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    role: roleEnum('role').notNull(),
+    resource: varchar('resource', { length: 40 }).notNull(),
+    canView: boolean('can_view').default(false).notNull(),
+    canCreate: boolean('can_create').default(false).notNull(),
+    canUpdate: boolean('can_update').default(false).notNull(),
+    canDelete: boolean('can_delete').default(false).notNull(),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex('role_permissions_role_resource_uq').on(t.role, t.resource),
+  ],
+);
 
 export const penggarap = mysqlTable(
   'penggarap',
@@ -342,6 +360,8 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Pengaturan = typeof pengaturan.$inferSelect;
 export type NewPengaturan = typeof pengaturan.$inferInsert;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type NewRolePermission = typeof rolePermissions.$inferInsert;
 export type Penggarap = typeof penggarap.$inferSelect;
 export type NewPenggarap = typeof penggarap.$inferInsert;
 export type PetakLahan = typeof petakLahan.$inferSelect;
